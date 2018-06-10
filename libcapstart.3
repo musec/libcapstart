@@ -1,0 +1,393 @@
+.\" Copyright (c) 2018 Jonathan Anderson <jonathan@FreeBSD.org>
+.\"
+.\" This software was developed at Memorial University under the
+.\" NSERC Discovery (RGPIN-2015-06048) program.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $FreeBSD$
+
+.Dd June 8, 2018
+.Dt LIBCAPSTART 3
+.Os
+
+.Sh NAME
+.Nm capstart
+.Nd library for starting Capsicum sandboxes
+
+.Sh LIBRARY
+library for starting Capsicum sandboxes (libcapstart, -lcapstart)
+
+.Sh SYNOPSIS
+
+.Pp
+libcapstart
+aids in the construction of least-privileged Capsicum sandboxes.
+It provides an API for constructing an execution environment that contains only
+explicitly-whitelisted files and environment variables.
+The target binary will be invoked from within capability mode and the
+whitelisted resources will be made available to Capsicum-oblivious software via
+libc wrappers that provide capability-safe versions of legacy system calls such
+as
+.Xr open 2
+and
+.Xr connect 2 .
+
+.In libcapstart.h
+
+.Ft struct capstart_t *
+.Fn capstart_create "void"
+
+.Ft const char **
+.Fn capstart_errors "struct capstart_sandbox *" "size_t *"
+
+.Ft const char *
+.Fn capstart_last_error "struct capstart_sandbox *"
+
+.Ft void
+.Fn capstart_release "struct capstart_t *"
+
+
+.Ss Sandbox setup
+
+.Ft bool
+.Fn capstart_add_file "struct capstart_sandbox *" "const char *path" "int csflags" "cap_rights_t *rights"
+
+.Ft bool
+.Fn capstart_add_path "struct capstart_sandbox *" "const char *path" "int flags"  "cap_rights_t *rights"
+
+.Ft bool
+.Fn capstart_copy_env "struct capstart_sandbox *" "const char *whitelist" "int flags"
+
+.Ft bool
+.Fn capstart_set_env "struct capstart_sandbox *" "const char *varname" "const char *value"
+
+.Ft bool
+.Fn capstart_set_target "struct capstart_sandbox *" "int binary"
+
+
+.Ss Sandbox execution
+
+.Ft bool
+.Fn capstart_exec "struct capstart_sandbox *" "char *const argv[]"
+
+
+.Sh DESCRIPTION
+
+.Ss Data structure lifecycle
+
+.Vt struct capstart_sandbox
+is an opaque type used to store information about a sandbox under
+construction.
+It is created with
+.Fn capstart_create
+and destroyed with
+.Fn capstart_release .
+
+.Fn capstart_create
+allocates and initializes a new
+.Vt capstart_sandbox
+structure.
+
+.Bf Sy
+Q: Does it even make sense to initialize a sandbox without a target
+   binary?  If we want to reduce the cost of initializing lots of
+   sandboxes, should we instead create a sandbox with an explicit OS/arch
+   combination (implying specific library directories and run-time
+   linker) and then just check that they match any binary passed to
+   capstart_set_target ?
+.Ef
+
+.Fn capstart_errors csp countp
+returns a pointer to an array of human-readable strings that describe errors in
+.Fa csp ,
+sorted in chronological order.
+The number of errors is stored in
+.Fa countp ,
+which is assumed to be non-NULL.
+Performing further operations on
+.Fa csp
+may invalidate this pointer.
+
+.Fn capstart_release csp
+closes any file descriptors owned by
+.Fa csp
+and frees its memory.
+This will often only be required after encountering errors building or executing
+the sandbox: when
+.Fn capstart_exec
+succeeds it never returns, so there is no opportunity to call
+.Fn capstart_release .
+
+
+.Ss Sandbox setup
+
+.Sy TODO: implement
+.Fn capstart_add_file ,
+.Fn capstart_add_path ,
+.Fn capstart_copy_env
+and
+.Fn capstart_set_env .
+
+.Fn capstart_add_file csp fildes rights flags
+makes an existing file descriptor
+.Fa fildes
+available to a sandbox.
+The
+.Fa rights
+parameter, if non-NULL, will be used to limit the capability rights of
+the descriptor before it is passed into the sandbox.
+By default,
+.Fa fildes
+is copied with
+.Xr dup 2 ;
+the caller is then free to
+.Xr close 2
+the original
+.Fa fildes
+argument without interfering with the sandbox.
+This behaviour can be controlled with the
+.Fa flags
+argument, which accepts a bitmask of the following values OR'ed together:
+
+.Bl -tag -width Er
+
+.It Bq Er CS_FILE_TAKE
+Take ownership of the supplied file descriptor rather than calling
+.Xr dup 2 .
+This saves a little bit of work, but if used, the caller should not
+.Xr close 2
+the descriptor or perform operations that modify its seek offset, e.g.,
+.Xr read 2
+or
+.Xr write 2 .
+
+.El
+
+
+.Fn capstart_add_path csp path openflags rights flags
+makes a file or directory path available to a sandbox.
+.Nm libcapstart
+may open it immediately and pass the descriptor into the sandbox at
+inception or it may or prepare a service to open the path on demand.
+The default behaviour is implementation-defined and may depend on the
+number of added paths, however this behaviour can be overridden using
+the
+.Fa flags
+parameter (described below).
+The
+.Fa openflags
+argument can be used to pass flags such as
+.Li O_RDWR
+and
+.Li O_DIRECTORY
+to
+.Xr open 2 .
+The
+.Fa rights
+parameter,
+.Sy which must not be
+.Li NULL ,
+will be used to limit the capability rights of the opened descriptor.
+The
+.Fa flags
+parameter accepts a bitwise OR of the following flags:
+
+.Bl -tag -width Er
+
+.It Bq Er CS_PATH_DEFER
+Defer opening of the path until it is required by the sandbox.
+This will cause a service to be prepared outside of the sandbox to open
+whitelisted paths on demand and pass their descriptors into the sandbox.
+This allows paths to be re-opened if required.
+
+.It Bq Er CS_PATH_PREOPEN
+Open the path before entering capability mode and pass the file
+descriptor directly into the sandbox.
+This direct approach allows the resources passed into the sandbox to be
+visible from inception and it requires fewer processes.
+
+.El
+
+.Fn capstart_copy_env csp whitelist flags
+copies whitelisted environment variables from the currently process'
+environment to the sandbox environment.
+A comma-separated list of environment variable names should be pased to
+.Fa whitelist ;
+any whitelisted variables that exist in the environment will be copied
+to the sandbox.
+The behaviour is additionally controlled by OR'ing the following flags:
+
+.Bl -tag -width Er
+
+.It Bq Er CS_ENV_INIT_MISSING
+If a whitelisted variable does not appear in the current environment,
+initialize it to an empty string.
+
+.It Bq Er CS_ENV_REQUIRE
+Require all whitelisted variables to be present in the environment.
+Consider the absence of a whitelisted variable to be an error.
+
+.El
+
+
+.Fn capstart_set_env csp varname value overwrite
+sets an environment variable in the sandbox.
+An existing environment variable with the same name will be overwritten
+iff
+.Fa overwrite
+is true.
+
+
+.Fn capstart_set_target csp binary
+sets the ELF binary to be invoked by
+.Fa csp ,
+configuring library and run-time linker paths appropriate to the binary's
+architecture as specified in the ELF header.
+The
+.Fa binary
+file descriptor is copied with
+.Xr dup 2 ;
+the caller is free to
+.Xr close 2
+its descriptor at any time after passing it to
+.Fn capstart_set_target .
+
+
+.Ss Sandbox execution
+
+.Fn capstart_exec csp argv
+starts executing the target binary with the configured environment
+in a capability-mode sandbox.
+A null-terminated array of arguments should be passed to
+.Fa argv
+as would be passed to
+.Xr fexecve 2 .
+
+
+.Sh RETURN VALUES
+
+The
+.Fn capstart_create
+and
+.Fn capstart_errors
+functions return
+.Dv NULL
+and set the
+.Va errno
+variable on failure.
+
+.Pp
+.Fn capstart_add_path,
+.Fn capstart_copy_env,
+.Fn capstart_set_env
+and
+.Fn capstart_set_target
+return true on success;
+on failure they return false and set
+.Va errno .
+
+.Pp
+.Fn capstart_exec
+only returns on error, in which case it returns false.
+
+.Pp
+The
+.Fn capstart_release
+function always succeeds.
+
+
+.Sh EXAMPLES
+
+The following example shows how to execute
+`/bin/echo "Hello, world!"` within a capability-mode sandbox:
+
+.Bd -literal -offset indent
+struct capstart_sandbox *csp = capstart_create();
+if (csp == NULL) {
+	err(-1, "Failed to create sandbox");
+}
+
+int binary = open("/bin/echo", O_RDONLY);
+if (binary < 0) {
+	err(-1, "Failed to open /bin/echo");
+}
+
+if (!capstart_set_target(csp, binary)) {
+	err(-1, "Failed to set target binary: %s",
+	    capstart_last_error(csp));
+}
+
+char *argv[] = {
+	"Hello,",
+	"world!",
+	NULL,
+};
+
+capstart_exec(csp);
+err(-1, "Failed to execute sandbox: %s", capstart_last_error());
+.Ed
+
+
+.Sh ERRORS
+
+When
+.Nm libcapstart
+functions fail, they set
+.Vn errno
+to one of the following values:
+
+.Bl -tag -width Er
+
+.It Bq Er EFTYPE
+The supplied file descriptor is not an executable ELF binary.
+
+.It Bq Er EINVAL
+A NULL pointer was passed to a
+.Nm libcapstart
+function.
+
+.Fn capstart_exec
+has been called on a
+.Nm capstart_sandbox
+that does not have a valid executable target set.
+
+.It Bq Er ENOEXEC
+The supplied binary is of an unsupported format, e.g., the system is missing
+libraries or a run-time linker for the binary's architecture.
+
+.It Bq Er EOPNOTSUPP
+The binary passed to
+.Fn capstart_set_target
+has an as-yet-unsupported architecture or OS.
+
+.It Bq Er EPROGMISMATCH
+The installed version of
+.Nm libelf
+does not support the current ELF version
+.Nm EV_CURRENT .
+
+
+.Sh SEE ALSO
+.Xr errno 2 ,
+.Xr execve 2 ,
+.Xr capsicum 4
