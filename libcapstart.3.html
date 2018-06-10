@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+  </style>
+  <title>LIBCAPSTART(3)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">LIBCAPSTART(3)</td>
+    <td class="head-vol">FreeBSD Library Functions Manual</td>
+    <td class="head-rtitle">LIBCAPSTART(3)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<h1 class="Sh" title="Sh" id="NAME"><a class="selflink" href="#NAME">NAME</a></h1>
+<b class="Nm" title="Nm">capstart</b> &#x2014;
+  <span class="Nd" title="Nd">library for starting Capsicum sandboxes
+<div style="height: 1.00em;">&#x00A0;</div>
+</span>
+<h1 class="Sh" title="Sh" id="LIBRARY"><a class="selflink" href="#LIBRARY">LIBRARY</a></h1>
+library for starting Capsicum sandboxes (libcapstart, -lcapstart)
+<div style="height: 1.00em;">&#x00A0;</div>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="selflink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+libcapstart aids in the construction of least-privileged Capsicum sandboxes. It
+  provides an API for constructing an execution environment that contains only
+  explicitly-whitelisted files and environment variables. The target binary will
+  be invoked from within capability mode and the whitelisted resources will be
+  made available to Capsicum-oblivious software via libc wrappers that provide
+  capability-safe versions of legacy system calls such as
+  <a class="Xr" title="Xr">open(2)</a> and
+  <a class="Xr" title="Xr">connect(2)</a>.
+<div style="height: 1.00em;">&#x00A0;</div>
+<br/>
+<b class="In" title="In">#include
+  &lt;<a class="In" title="In">libcapstart.h</a>&gt;</b>
+<div style="height: 1.00em;">&#x00A0;</div>
+<br/>
+<var class="Ft" title="Ft">struct capstart_t *</var>
+<br/>
+<b class="Fn" title="Fn">capstart_create</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">void</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<br/>
+<var class="Ft" title="Ft">const char **</var>
+<br/>
+<b class="Fn" title="Fn">capstart_errors</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">struct
+  capstart_sandbox *</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t *</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<br/>
+<var class="Ft" title="Ft">const char *</var>
+<br/>
+<b class="Fn" title="Fn">capstart_last_error</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">struct
+  capstart_sandbox *</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<br/>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">capstart_release</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">struct
+  capstart_t *</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<h2 class="Ss" title="Ss" id="Sandbox_setup"><a class="selflink" href="#Sandbox_setup">Sandbox
+  setup</a></h2>
+<var class="Ft" title="Ft">bool</var>
+<br/>
+<b class="Fn" title="Fn">capstart_add_file</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">struct
+  capstart_sandbox *</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *path</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">int
+  csflags</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">cap_rights_t
+  *rights</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<br/>
+<var class="Ft" title="Ft">bool</var>
+<br/>
+<b class="Fn" title="Fn">capstart_add_path</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">struct
+  capstart_sandbox *</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *path</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">int
+  flags</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">cap_rights_t
+  *rights</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<br/>
+<var class="Ft" title="Ft">bool</var>
+<br/>
+<b class="Fn" title="Fn">capstart_copy_env</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">struct
+  capstart_sandbox *</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *whitelist</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">int
+  flags</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<br/>
+<var class="Ft" title="Ft">bool</var>
+<br/>
+<b class="Fn" title="Fn">capstart_set_env</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">struct
+  capstart_sandbox *</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *varname</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  char *value</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<br/>
+<var class="Ft" title="Ft">bool</var>
+<br/>
+<b class="Fn" title="Fn">capstart_set_target</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">struct
+  capstart_sandbox *</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">int binary</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<h2 class="Ss" title="Ss" id="Sandbox_execution"><a class="selflink" href="#Sandbox_execution">Sandbox
+  execution</a></h2>
+<var class="Ft" title="Ft">bool</var>
+<br/>
+<b class="Fn" title="Fn">capstart_exec</b>(<var class="Fa" title="Fa" style="white-space: nowrap;">struct
+  capstart_sandbox *</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">char *const
+  argv[]</var>);
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="selflink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<h2 class="Ss" title="Ss" id="Data_structure_lifecycle"><a class="selflink" href="#Data_structure_lifecycle">Data
+  structure lifecycle</a></h2>
+<var class="Vt" title="Vt">struct capstart_sandbox</var> is an opaque type used
+  to store information about a sandbox under construction. It is created with
+  <b class="Fn" title="Fn">capstart_create</b>() and destroyed with
+  <b class="Fn" title="Fn">capstart_release</b>().
+<div style="height: 1.00em;">&#x00A0;</div>
+<b class="Fn" title="Fn">capstart_create</b>() allocates and initializes a new
+  <var class="Vt" title="Vt">capstart_sandbox</var> structure.
+<div style="height: 1.00em;">&#x00A0;</div>
+<div class="Sy" style="display: inline; margin-left: 1.00ex;">Q: Does it even
+  make sense to initialize a sandbox without a target
+<br/>
+ binary? If we want to reduce the cost of initializing lots of
+<br/>
+ sandboxes, should we instead create a sandbox with an explicit OS/arch
+<br/>
+ combination (implying specific library directories and run-time
+<br/>
+ linker) and then just check that they match any binary passed to
+<br/>
+ capstart_set_target ?</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<b class="Fn" title="Fn">capstart_errors</b>(<var class="Fa" title="Fa">csp</var>,
+  <var class="Fa" title="Fa">countp</var>) returns a pointer to an array of
+  human-readable strings that describe errors in
+  <var class="Fa" title="Fa">csp</var>, sorted in chronological order. The
+  number of errors is stored in <var class="Fa" title="Fa">countp</var>, which
+  is assumed to be non-NULL. Performing further operations on
+  <var class="Fa" title="Fa">csp</var> may invalidate this pointer.
+<div style="height: 1.00em;">&#x00A0;</div>
+<b class="Fn" title="Fn">capstart_release</b>(<var class="Fa" title="Fa">csp</var>)
+  closes any file descriptors owned by <var class="Fa" title="Fa">csp</var> and
+  frees its memory. This will often only be required after encountering errors
+  building or executing the sandbox: when
+  <b class="Fn" title="Fn">capstart_exec</b>() succeeds it never returns, so
+  there is no opportunity to call
+  <b class="Fn" title="Fn">capstart_release</b>().
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<h2 class="Ss" title="Ss" id="Sandbox_setup"><a class="selflink" href="#Sandbox_setup">Sandbox
+  setup</a></h2>
+<b class="Sy" title="Sy">TODO: implement</b>
+  <b class="Fn" title="Fn">capstart_add_file</b>(),
+  <b class="Fn" title="Fn">capstart_add_path</b>(),
+  <b class="Fn" title="Fn">capstart_copy_env</b>() and
+  <b class="Fn" title="Fn">capstart_set_env</b>().
+<div style="height: 1.00em;">&#x00A0;</div>
+<b class="Fn" title="Fn">capstart_add_file</b>(<var class="Fa" title="Fa">csp</var>,
+  <var class="Fa" title="Fa">fildes</var>,
+  <var class="Fa" title="Fa">rights</var>,
+  <var class="Fa" title="Fa">flags</var>) makes an existing file descriptor
+  <var class="Fa" title="Fa">fildes</var> available to a sandbox. The
+  <var class="Fa" title="Fa">rights</var> parameter, if non-NULL, will be used
+  to limit the capability rights of the descriptor before it is passed into the
+  sandbox. By default, <var class="Fa" title="Fa">fildes</var> is copied with
+  <a class="Xr" title="Xr">dup(2)</a>; the caller is then free to
+  <a class="Xr" title="Xr">close(2)</a> the original
+  <var class="Fa" title="Fa">fildes</var> argument without interfering with the
+  sandbox. This behaviour can be controlled with the
+  <var class="Fa" title="Fa">flags</var> argument, which accepts a bitmask of
+  the following values OR'ed together:
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<dl class="Bl-tag" style="margin-left: 23.40ex;">
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<code class="Er" title="Er">CS_FILE_TAKE</code>]</dt>
+  <dd class="It-tag">Take ownership of the supplied file descriptor rather than
+      calling <a class="Xr" title="Xr">dup(2)</a>. This saves a little bit of
+      work, but if used, the caller should not
+      <a class="Xr" title="Xr">close(2)</a> the descriptor or perform operations
+      that modify its seek offset, e.g., <a class="Xr" title="Xr">read(2)</a> or
+      <a class="Xr" title="Xr">write(2)</a>.
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+</dl>
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<b class="Fn" title="Fn">capstart_add_path</b>(<var class="Fa" title="Fa">csp</var>,
+  <var class="Fa" title="Fa">path</var>,
+  <var class="Fa" title="Fa">openflags</var>,
+  <var class="Fa" title="Fa">rights</var>,
+  <var class="Fa" title="Fa">flags</var>) makes a file or directory path
+  available to a sandbox. <b class="Nm" title="Nm">libcapstart</b> may open it
+  immediately and pass the descriptor into the sandbox at inception or it may or
+  prepare a service to open the path on demand. The default behaviour is
+  implementation-defined and may depend on the number of added paths, however
+  this behaviour can be overridden using the
+  <var class="Fa" title="Fa">flags</var> parameter (described below). The
+  <var class="Fa" title="Fa">openflags</var> argument can be used to pass flags
+  such as <code class="Li">O_RDWR</code> and <code class="Li">O_DIRECTORY</code>
+  to <a class="Xr" title="Xr">open(2)</a>. The
+  <var class="Fa" title="Fa">rights</var> parameter,
+  <b class="Sy" title="Sy">which must not be</b> <code class="Li">NULL</code>,
+  will be used to limit the capability rights of the opened descriptor. The
+  <var class="Fa" title="Fa">flags</var> parameter accepts a bitwise OR of the
+  following flags:
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<dl class="Bl-tag" style="margin-left: 23.40ex;">
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<code class="Er" title="Er">CS_PATH_DEFER</code>]</dt>
+  <dd class="It-tag">Defer opening of the path until it is required by the
+      sandbox. This will cause a service to be prepared outside of the sandbox
+      to open whitelisted paths on demand and pass their descriptors into the
+      sandbox. This allows paths to be re-opened if required.
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<code class="Er" title="Er">CS_PATH_PREOPEN</code>]</dt>
+  <dd class="It-tag">Open the path before entering capability mode and pass the
+      file descriptor directly into the sandbox. This direct approach allows the
+      resources passed into the sandbox to be visible from inception and it
+      requires fewer processes.
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+</dl>
+<div style="height: 1.00em;">&#x00A0;</div>
+<b class="Fn" title="Fn">capstart_copy_env</b>(<var class="Fa" title="Fa">csp</var>,
+  <var class="Fa" title="Fa">whitelist</var>,
+  <var class="Fa" title="Fa">flags</var>) copies whitelisted environment
+  variables from the currently process' environment to the sandbox environment.
+  A comma-separated list of environment variable names should be pased to
+  <var class="Fa" title="Fa">whitelist</var>; any whitelisted variables that
+  exist in the environment will be copied to the sandbox. The behaviour is
+  additionally controlled by OR'ing the following flags:
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<dl class="Bl-tag" style="margin-left: 23.40ex;">
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<code class="Er" title="Er">CS_ENV_INIT_MISSING</code>]</dt>
+  <dd class="It-tag">If a whitelisted variable does not appear in the current
+      environment, initialize it to an empty string.
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<code class="Er" title="Er">CS_ENV_REQUIRE</code>]</dt>
+  <dd class="It-tag">Require all whitelisted variables to be present in the
+      environment. Consider the absence of a whitelisted variable to be an
+      error.
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+</dl>
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<b class="Fn" title="Fn">capstart_set_env</b>(<var class="Fa" title="Fa">csp</var>,
+  <var class="Fa" title="Fa">varname</var>,
+  <var class="Fa" title="Fa">value</var>,
+  <var class="Fa" title="Fa">overwrite</var>) sets an environment variable in
+  the sandbox. An existing environment variable with the same name will be
+  overwritten iff <var class="Fa" title="Fa">overwrite</var> is true.
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<b class="Fn" title="Fn">capstart_set_target</b>(<var class="Fa" title="Fa">csp</var>,
+  <var class="Fa" title="Fa">binary</var>) sets the ELF binary to be invoked by
+  <var class="Fa" title="Fa">csp</var>, configuring library and run-time linker
+  paths appropriate to the binary's architecture as specified in the ELF header.
+  The <var class="Fa" title="Fa">binary</var> file descriptor is copied with
+  <a class="Xr" title="Xr">dup(2)</a>; the caller is free to
+  <a class="Xr" title="Xr">close(2)</a> its descriptor at any time after passing
+  it to <b class="Fn" title="Fn">capstart_set_target</b>().
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<h2 class="Ss" title="Ss" id="Sandbox_execution"><a class="selflink" href="#Sandbox_execution">Sandbox
+  execution</a></h2>
+<b class="Fn" title="Fn">capstart_exec</b>(<var class="Fa" title="Fa">csp</var>,
+  <var class="Fa" title="Fa">argv</var>) starts executing the target binary with
+  the configured environment in a capability-mode sandbox. A null-terminated
+  array of arguments should be passed to <var class="Fa" title="Fa">argv</var>
+  as would be passed to <a class="Xr" title="Xr">fexecve(2)</a>.
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="selflink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+The <b class="Fn" title="Fn">capstart_create</b>() and
+  <b class="Fn" title="Fn">capstart_errors</b>() functions return
+  <code class="Dv" title="Dv">NULL</code> and set the
+  <var class="Va" title="Va">errno</var> variable on failure.
+<div style="height: 1.00em;">&#x00A0;</div>
+<div class="Pp"></div>
+<b class="Fn" title="Fn">capstart_add_path,</b>()
+  <b class="Fn" title="Fn">capstart_copy_env,</b>()
+  <b class="Fn" title="Fn">capstart_set_env</b>() and
+  <b class="Fn" title="Fn">capstart_set_target</b>() return true on success; on
+  failure they return false and set <var class="Va" title="Va">errno</var>.
+<div style="height: 1.00em;">&#x00A0;</div>
+<div class="Pp"></div>
+<b class="Fn" title="Fn">capstart_exec</b>() only returns on error, in which
+  case it returns false.
+<div style="height: 1.00em;">&#x00A0;</div>
+<div class="Pp"></div>
+The <b class="Fn" title="Fn">capstart_release</b>() function always succeeds.
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<h1 class="Sh" title="Sh" id="EXAMPLES"><a class="selflink" href="#EXAMPLES">EXAMPLES</a></h1>
+The following example shows how to execute `/bin/echo &quot;Hello, world!&quot;`
+  within a capability-mode sandbox:
+<div style="height: 1.00em;">&#x00A0;</div>
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+struct capstart_sandbox *csp = capstart_create(); 
+if (csp == NULL) { 
+	err(-1, &quot;Failed to create sandbox&quot;); 
+} 
+ 
+int binary = open(&quot;/bin/echo&quot;, O_RDONLY); 
+if (binary &lt; 0) { 
+	err(-1, &quot;Failed to open /bin/echo&quot;); 
+} 
+ 
+if (!capstart_set_target(csp, binary)) { 
+	err(-1, &quot;Failed to set target binary: %s&quot;, 
+	    capstart_last_error(csp)); 
+} 
+ 
+char *argv[] = { 
+	&quot;Hello,&quot;, 
+	&quot;world!&quot;, 
+	NULL, 
+}; 
+ 
+capstart_exec(csp); 
+err(-1, &quot;Failed to execute sandbox: %s&quot;, capstart_last_error());
+</pre>
+</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<h1 class="Sh" title="Sh" id="ERRORS"><a class="selflink" href="#ERRORS">ERRORS</a></h1>
+When <b class="Nm" title="Nm">libcapstart</b> functions fail, they set to one of
+  the following values:
+<div style="height: 1.00em;">&#x00A0;</div>
+<div style="height: 1.00em;">&#x00A0;</div>
+<dl class="Bl-tag" style="margin-left: 23.40ex;">
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<a class="selflink" href="#EFTYPE"><code class="Er" title="Er" id="EFTYPE">EFTYPE</code></a>]</dt>
+  <dd class="It-tag">The supplied file descriptor is not an executable ELF
+      binary.
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<a class="selflink" href="#EINVAL"><code class="Er" title="Er" id="EINVAL">EINVAL</code></a>]</dt>
+  <dd class="It-tag">A NULL pointer was passed to a
+      <b class="Nm" title="Nm">libcapstart</b> function.
+    <div style="height: 1.00em;">&#x00A0;</div>
+    <b class="Fn" title="Fn">capstart_exec</b>() has been called on a
+      <b class="Nm" title="Nm">capstart_sandbox</b> that does not have a valid
+      executable target set.
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<a class="selflink" href="#ENOEXEC"><code class="Er" title="Er" id="ENOEXEC">ENOEXEC</code></a>]</dt>
+  <dd class="It-tag">The supplied binary is of an unsupported format, e.g., the
+      system is missing libraries or a run-time linker for the binary's
+      architecture.
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<a class="selflink" href="#EOPNOTSUPP"><code class="Er" title="Er" id="EOPNOTSUPP">EOPNOTSUPP</code></a>]</dt>
+  <dd class="It-tag">The binary passed to
+      <b class="Fn" title="Fn">capstart_set_target</b>() has an
+      as-yet-unsupported architecture or OS.
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+  <dt class="It-tag" style="margin-left: -23.40ex;">[<a class="selflink" href="#EPROGMISMATCH"><code class="Er" title="Er" id="EPROGMISMATCH">EPROGMISMATCH</code></a>]</dt>
+  <dd class="It-tag">The installed version of
+      <b class="Nm" title="Nm">libelf</b> does not support the current ELF
+      version <b class="Nm" title="Nm">EV_CURRENT</b>.
+    <div style="height: 1.00em;">&#x00A0;</div>
+    <div style="height: 1.00em;">&#x00A0;</div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="selflink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr">errno(2)</a>, <a class="Xr" title="Xr">execve(2)</a>,
+  <a class="Xr" title="Xr">capsicum(4)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">June 8, 2018</td>
+    <td class="foot-os">FreeBSD 12.0-CURRENT</td>
+  </tr>
+</table>
+</body>
+</html>
